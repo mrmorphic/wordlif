@@ -1,0 +1,149 @@
+<html>
+  <style>
+    body {
+      background-color: white;
+    }
+
+    #container {
+      display: inline-grid;
+    }
+
+    .cell {
+      width: 40px;
+      height: 40px;
+      border-radius: 5px;
+      margin: 2px;
+    }
+
+    .state-0 {
+      background-color: #6aaa64;
+    }
+
+    .state-1 {
+      background-color: #c9b458;
+    }
+
+    .state-2 {
+      background-color: #787c7e;
+    }
+  </style>
+
+  <body>
+    <div id="container"></div>
+  </body>
+
+  <script type="text/javascript">
+    const WIDTH = 5;
+    const HEIGHT = 5;
+    const DEAD = 0;
+    const LIVE = 1;
+    const container = document.getElementById("container");
+    let currentCells = []; // the current generation of cells
+    let oldCells = []; // previous generation
+
+    function getCell(cells, row, col) {
+      return cells[row * WIDTH + col];
+    }
+
+    function setCell(cells, row, col, state) {
+      cells[row * WIDTH + col] = state;
+    }
+
+    function setup() {
+      // set up initial cells structure with random values
+      for (let i = 0; i < WIDTH * HEIGHT; i++) {
+        currentCells.push(Math.random() < 0.5 ? DEAD : LIVE);
+      }
+
+      // Create board
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) {
+          let cell = document.createElement("div");
+          cell.className = "cell cell_" + y + "_" + x + " state-?";
+          cell.style.cssText =
+            "grid-row-start: " + (y + 1) + "; grid-column-start: " + (x + 1);
+          container.appendChild(cell);
+        }
+      }
+
+      displayCells();
+    }
+
+    // update the DOM based on cells
+    function displayCells() {
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) {
+          const element = document.getElementsByClassName(
+            "cell_" + y + "_" + x
+          )[0];
+          const cellState = getCell(currentCells, y, x);
+          let newStateClass;
+
+          if (cellState === LIVE) {
+            newStateClass = "state-0";
+          } else {
+            if (getCell(oldCells, y, x)) {
+              newStateClass = "state-1";
+            } else {
+              newStateClass = "state-2";
+            }
+          }
+          element.className = element.className.replace(
+            /state-./,
+            newStateClass
+          );
+        }
+      }
+    }
+
+    function cellCount(oldCells, x, y) {
+      if (y < 0 || y >= HEIGHT || x < 0 || x >= WIDTH) {
+        return 0;
+      }
+
+      const old = getCell(oldCells, y, x);
+      return old === LIVE ? 1 : 0;
+    }
+
+    function getNeighbourCounts(oldCells, x, y) {
+      let count = 0;
+      count += cellCount(oldCells, x - 1, y - 1);
+      count += cellCount(oldCells, x, y - 1);
+      count += cellCount(oldCells, x + 1, y - 1);
+      count += cellCount(oldCells, x - 1, y);
+      count += cellCount(oldCells, x + 1, y);
+      count += cellCount(oldCells, x - 1, y + 1);
+      count += cellCount(oldCells, x, y + 1);
+      count += cellCount(oldCells, x + 1, y + 1);
+      return count;
+    }
+
+    // Updates for the next generation.
+    function nextGen() {
+      oldCells = [...currentCells];
+
+      // recalc
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) {
+          const old = getCell(oldCells, y, x);
+          const neighbours = getNeighbourCounts(oldCells, x, y);
+          if (old === LIVE) {
+            setCell(
+              currentCells,
+              y,
+              x,
+              neighbours < 2 || neighbours > 3 ? DEAD : LIVE
+            );
+          } else {
+            setCell(currentCells, y, x, neighbours === 3 ? LIVE : DEAD);
+          }
+        }
+      }
+
+      displayCells();
+    }
+
+    setup();
+    setInterval(nextGen, 500);
+  </script>
+</html>
